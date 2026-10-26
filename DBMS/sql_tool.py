@@ -11,28 +11,19 @@ def execute_sql(sql: str) -> dict:
     """
 
     sql = sql.strip()
-
-    # --------------------------------------------------
-    # Safety check
-    # --------------------------------------------------
-
     if not sql:
         return {
             "success": False,
             "error": "Empty SQL query."
         }
-
-    # Remove trailing semicolon for easier validation
     normalized = sql.rstrip(";").strip()
 
-    # Only allow SELECT queries
     if not normalized.lower().startswith("select"):
         return {
             "success": False,
             "error": "Only SELECT queries are allowed."
         }
 
-    # Block potentially dangerous SQL keywords
     forbidden = [
         "insert ",
         "update ",

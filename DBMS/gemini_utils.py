@@ -55,7 +55,8 @@ SQL_TOOL = {
         - sorting records
         - joining multiple tables
         - aggregating billing information
-        - finding doctors, patients, treatments, or appointments using exact fields
+        - finding xrays
+        - finding doctors, patients, treatments,xray, or appointments using exact fields
 
         Only generate SELECT queries.
 
@@ -109,6 +110,13 @@ SQL_TOOL = {
             billing_date
             payment_status
 
+        xray:
+            xray_id
+            appointment_id
+            treatment_id
+            image_path
+            image_label
+
         Use the actual column names listed above.
         """,   
             "parameters": {
@@ -153,6 +161,10 @@ def generate_answer(
             - "What is the total billing amount?"
             - "How many appointments were cancelled?"
             - "Which patients have more than 3 appointments?"
+            - "How many X-rays are recorded?"
+            - "How many X-rays are labelled NORMAL or PNEUMONIA?"
+            - "Which appointment is associated with a particular X-ray?"
+
 
             Use the provided semantic context when the question requires
             semantic understanding of free-text medical records.
@@ -162,6 +174,9 @@ def generate_answer(
             - "Which patients had symptoms similar to chest pain?"
             - "What treatments were given for patients complaining about fever?"
             - "Find records describing headaches."
+            - "Find X-ray descriptions mentioning lung opacities."
+            - "Which X-ray descriptions mention possible pneumonia?"
+            - "Summarize the findings described in an X-ray report."
 
             You may use both the context and SQL if necessary.
 

@@ -1,26 +1,13 @@
-"""
-Loads the 5 CSVs into their relational tables, then builds a text "chunk"
-for every row across ALL 5 tables (not just treatments/appointments) and
-embeds them locally via Ollama (qwen3-embedding:4b) — no API quota.
-
-Matches real Kaggle dataset columns:
-  doctors.csv:      doctor_id,first_name,last_name,specialization,phone_number,years_experience,hospital_branch,email
-  patients.csv:     patient_id,first_name,last_name,gender,date_of_birth,contact_number,address,registration_date,insurance_provider,insurance_number,email
-  appointments.csv: appointment_id,patient_id,doctor_id,appointment_date,appointment_time,reason_for_visit,status
-  treatments.csv:   treatment_id,appointment_id,treatment_type,description,cost,treatment_date
-  billing.csv:      bill_id,patient_id,treatment_id,bill_date,amount,payment_method,payment_status
-"""
 import json
 import pandas as pd
 from db import get_connection
-from ollama_utils import embed_batch
+from ollama_utils import embed_batch,generate_xray_description
 
 DATA_DIR = "../archive"
-BATCH_SIZE = 10   # texts per Ollama call — local CPU embedding can be slow, keep batches modest
+BATCH_SIZE = 20  
 
 
 def load_table(cur, csv_path, table, columns):
-    """Generic loader: columns = list of (csv_col, db_col) pairs, in DB column order."""
     df = pd.read_csv(csv_path)
     db_cols = [db for _, db in columns]
     csv_cols = [csv for csv, _ in columns]
@@ -33,10 +20,6 @@ def load_table(cur, csv_path, table, columns):
 
 
 def embed_and_store_batch(cur, rows):
-    """rows = list of (source_table, source_id, text, metadata_dict).
-    Skips rows already embedded (resumability across reruns), then embeds
-    remaining texts via local Ollama in chunks of BATCH_SIZE.
-    """
     if not rows:
         return
 
@@ -75,7 +58,6 @@ def main():
     conn = get_connection()
     cur = conn.cursor()
 
-    # --- Doctors ---
     load_table(cur, f"{DATA_DIR}/doctors.csv", "doctors", [
         ("doctor_id", "doctor_id"),
         ("first_name", "first_name"),
@@ -87,7 +69,6 @@ def main():
         ("email", "email"),
     ])
 
-    # --- Patients ---
     load_table(cur, f"{DATA_DIR}/patients.csv", "patients", [
         ("patient_id", "patient_id"),
         ("first_name", "first_name"),
@@ -103,7 +84,6 @@ def main():
     ])
     conn.commit()
 
-    # --- Appointments ---
     load_table(cur, f"{DATA_DIR}/appointments.csv", "appointments", [
         ("appointment_id", "appointment_id"),
         ("patient_id", "patient_id"),
@@ -115,7 +95,6 @@ def main():
     ])
     conn.commit()
 
-    # --- Treatments ---
     load_table(cur, f"{DATA_DIR}/treatments.csv", "treatments", [
         ("treatment_id", "treatment_id"),
         ("appointment_id", "appointment_id"),
@@ -126,7 +105,6 @@ def main():
     ])
     conn.commit()
 
-    # --- Billing ---
     load_table(cur, f"{DATA_DIR}/billing.csv", "billing", [
         ("bill_id", "bill_id"),
         ("patient_id", "patient_id"),
@@ -138,12 +116,16 @@ def main():
     ])
     conn.commit()
 
-    # ============================================================
-    # Build embeddable text chunks for ALL 5 entity types.
-    # Structured columns get templated into natural-language sentences
-    # so semantic search has real content to match against, not just
-    # the two free-text fields (treatments.description, appointments.reason_for_visit).
-    # ============================================================
+    load_table(cur, f"{DATA_DIR}/xray.csv", "xray", [
+        ("xray_id", "xray_id"),
+        ("appointment_id", "appointment_id"),
+        ("treatment_id", "treatment_id"),
+        ("image_path", "image_path"),
+        ("image_label", "image_label"),
+    ])
+    conn.commit()
+
+
 
     # --- Doctors ---
     cur.execute("SELECT doctor_id, first_name, last_name, specialization, years_experience, hospital_branch FROM doctors")
@@ -215,6 +197,20 @@ def main():
         }))
     print(f"Embedding {len(billing_rows)} billing records...")
     embed_and_store_batch(cur, billing_rows)
+    conn.commit()
+
+    #---xrays ----
+    cur.execute("SELECT xray_id,appointment_id,treatment_id,image_path,image_label FROM xray")
+    xray_rows = []
+    for xray_id,appointment_id,treatment_id,image_path,image_label in cur.fetchall():
+        text = generate_xray_description("../archive/"+image_path)
+        print(f"generating text for image {xray_id}");
+        xray_rows.append(("xray", xray_id, text, {
+            "xray_id": xray_id, "image_label": image_label,"image_path":image_path,"appointment_id": appointment_id,
+            "treatment_id": treatment_id,
+        }))
+    print(f"Embedding {len(xray_rows)} xray profiles...")
+    embed_and_store_batch(cur, xray_rows)
     conn.commit()
 
     cur.close()

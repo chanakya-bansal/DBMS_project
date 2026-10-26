@@ -1,8 +1,4 @@
--- Hospital RAG schema — matches actual Kaggle CSV headers
--- IDs are TEXT (e.g. 'D001', 'P001', 'A001') since the dataset uses prefixed string IDs, not integers.
 CREATE EXTENSION IF NOT EXISTS vector;
-
--- ===== Core relational tables =====
 
 CREATE TABLE doctors (
     doctor_id       TEXT PRIMARY KEY,
@@ -36,14 +32,14 @@ CREATE TABLE appointments (
     appointment_date  DATE,
     appointment_time  TIME,
     reason_for_visit  TEXT,
-    status            TEXT          -- e.g. Scheduled / Completed / Cancelled
+    status            TEXT       
 );
 
 CREATE TABLE treatments (
     treatment_id    TEXT PRIMARY KEY,
     appointment_id  TEXT REFERENCES appointments(appointment_id),
     treatment_type  TEXT,
-    description     TEXT,          -- free-text: what this embedding table indexes
+    description     TEXT,        
     cost            NUMERIC(10,2),
     treatment_date  DATE
 );
@@ -55,7 +51,15 @@ CREATE TABLE billing (
     bill_date       DATE,
     amount          NUMERIC(10,2),
     payment_method  TEXT,
-    payment_status  TEXT           -- Paid / Pending / Overdue
+    payment_status  TEXT          
+);
+
+CREATE TABLE xray (
+    xray_id          TEXT PRIMARY KEY,
+    appointment_id   TEXT REFERENCES appointments(appointment_id),
+    treatment_id     TEXT REFERENCES treatments(treatment_id),
+    image_path       TEXT,
+    image_label      TEXT
 );
 
 -- ===== RAG layer: embeddings table =====
