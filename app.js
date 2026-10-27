@@ -1,28 +1,15 @@
 /**
  * MediPulse | Hospital DBMS RAG Frontend Logic
- * Supports customizable text payload dispatch to any RAG backend API
- * and an interactive DBMS simulator for instant testing.
+ * Connects the chat interface to the local hospital RAG adapter.
  */
 
-// Default Configuration & State
-const DEFAULT_CONFIG = {
-  mode: 'mock', // 'mock' or 'live'
-  apiUrl: 'http://localhost:8000/api/rag/query',
-  method: 'POST',
-  payloadFormat: 'query', // 'query' | 'text' | 'prompt' | 'message' | 'raw'
-  authHeader: '',
-  theme: 'light',
-};
-
 const STORAGE_KEYS = {
-  SETTINGS: 'medipulse_rag_settings_v1',
   HISTORY: 'medipulse_rag_history_v1',
   THEME: 'medipulse_rag_theme_v1'
 };
 
 // Application State
 let appState = {
-  settings: { ...DEFAULT_CONFIG },
   messages: [],
   isLoading: false,
   abortController: null,
@@ -36,25 +23,6 @@ const queryInput = document.getElementById('queryInput');
 const sendBtn = document.getElementById('sendBtn');
 const abortBtn = document.getElementById('abortBtn');
 const clearChatBtn = document.getElementById('clearChatBtn');
-const statusBadge = document.getElementById('statusBadge');
-const statusText = document.getElementById('statusText');
-
-// Modals & Controls
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsModal = document.getElementById('settingsModal');
-const closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');
-const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-const testConnectionBtn = document.getElementById('testConnectionBtn');
-const customApiIndicator = document.getElementById('customApiIndicator');
-
-const modeMockBtn = document.getElementById('modeMockBtn');
-const modeLiveBtn = document.getElementById('modeLiveBtn');
-const liveBackendFields = document.getElementById('liveBackendFields');
-const apiUrlInput = document.getElementById('apiUrlInput');
-const apiMethodSelect = document.getElementById('apiMethodSelect');
-const payloadFormatSelect = document.getElementById('payloadFormatSelect');
-const apiAuthInput = document.getElementById('apiAuthInput');
 
 const infoBtn = document.getElementById('infoBtn');
 const infoModal = document.getElementById('infoModal');
@@ -68,32 +36,11 @@ const toastContainer = document.getElementById('toastContainer');
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadSavedSettings();
   loadSavedTheme();
   loadSavedHistory();
   initEventListeners();
-  updateUIForCurrentMode();
   lucide.createIcons();
 });
-
-function loadSavedSettings() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (saved) {
-      appState.settings = { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
-    }
-  } catch (e) {
-    console.error('Error loading settings from localStorage:', e);
-  }
-}
-
-function saveSettingsToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(appState.settings));
-  } catch (e) {
-    console.error('Error saving settings to localStorage:', e);
-  }
-}
 
 function loadSavedTheme() {
   const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 
@@ -102,7 +49,6 @@ function loadSavedTheme() {
 }
 
 function setTheme(theme) {
-  appState.settings.theme = theme;
   if (theme === 'dark') {
     document.documentElement.classList.add('dark');
     themeIcon.setAttribute('data-lucide', 'sun');
@@ -170,24 +116,13 @@ function initEventListeners() {
     });
   });
 
-  // Settings Modal events
-  settingsBtn.addEventListener('click', openSettingsModal);
-  closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
-  cancelSettingsBtn.addEventListener('click', closeSettingsModal);
-  saveSettingsBtn.addEventListener('click', saveSettingsFromModal);
-  testConnectionBtn.addEventListener('click', testApiConnection);
-
-  modeMockBtn.addEventListener('click', () => selectModeInModal('mock'));
-  modeLiveBtn.addEventListener('click', () => selectModeInModal('live'));
-
-  // Info / DB Schema Modal events
+  // Database schema modal events
   infoBtn.addEventListener('click', () => { infoModal.classList.remove('hidden'); infoModal.classList.add('flex'); });
   closeInfoModalBtn.addEventListener('click', () => { infoModal.classList.add('hidden'); infoModal.classList.remove('flex'); });
   closeInfoModalBottomBtn.addEventListener('click', () => { infoModal.classList.add('hidden'); infoModal.classList.remove('flex'); });
 
   // Close modals on backdrop click
   window.addEventListener('click', (e) => {
-    if (e.target === settingsModal) closeSettingsModal();
     if (e.target === infoModal) {
       infoModal.classList.add('hidden');
       infoModal.classList.remove('flex');
@@ -230,7 +165,6 @@ async function handleSendQuery() {
     id: assistantMsgId,
     role: 'assistant',
     text: '',
-    citations: [],
     status: 'loading',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
@@ -241,11 +175,7 @@ async function handleSendQuery() {
   scrollToBottom();
 
   try {
-    if (appState.settings.mode === 'live') {
-      await fetchLiveRagResponse(queryText, assistantMsgId);
-    } else {
-      await simulateMockRagResponse(queryText, assistantMsgId);
-    }
+    await fetchLocalRagResponse(queryText, assistantMsgId);
   } catch (err) {
     if (err.name === 'AbortError') {
       updateAssistantMessage(assistantMsgId, {
@@ -255,7 +185,7 @@ async function handleSendQuery() {
       showToast('Query cancelled', 'info');
     } else {
       console.error('RAG Query Error:', err);
-      const errorMsg = `### ⚠️ Backend Connection Failed\n\nCould not receive a response from the RAG backend endpoint at \`${appState.settings.apiUrl}\`.\n\n**Details:** ${err.message || 'Unknown network error'}\n\n> **Tip:** If your backend server is not running yet, open **Settings (⚙️)** in the top right and switch to **Interactive Mock Mode** to test the UI immediately!`;
+      const errorMsg = `### ⚠️ Local RAG Request Failed\n\nCould not receive a response from the local RAG adapter at \`http://localhost:8000\`.\n\n**Details:** ${err.message || 'Unknown network error'}\n\n> Check that the adapter is running in the project virtual environment.`;
       updateAssistantMessage(assistantMsgId, {
         text: errorMsg,
         status: 'error'
@@ -289,68 +219,148 @@ function setLoadingState(loading) {
   }
 }
 
-// ==================== LIVE API FETCH ====================
+// ==================== LOCAL PYTHON RAG FETCH ====================
 
-async function fetchLiveRagResponse(queryText, assistantMsgId) {
+async function fetchLocalRagResponse(queryText, assistantMsgId) {
   appState.abortController = new AbortController();
-  const { apiUrl, method, payloadFormat, authHeader } = appState.settings;
+  const apiUrl = 'http://localhost:8000/api/rag/stream';
 
-  let requestBody = null;
-  const headers = {};
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: queryText }),
+      signal: appState.abortController.signal
+    });
 
-  if (authHeader && authHeader.trim()) {
-    headers['Authorization'] = authHeader.trim();
-  }
-
-  // Construct request payload according to configured format
-  if (method === 'POST') {
-    if (payloadFormat === 'raw') {
-      headers['Content-Type'] = 'text/plain';
-      requestBody = queryText;
-    } else {
-      headers['Content-Type'] = 'application/json';
-      const payloadObj = {};
-      payloadObj[payloadFormat] = queryText;
-      requestBody = JSON.stringify(payloadObj);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    if (!response.body) {
+      throw new Error('Streaming response is not available in this browser.');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let pipelineOutput = '';
+    let completed = false;
+
+    const handleEvent = (frame) => {
+      const dataLine = frame.split(/\r?\n/).find(line => line.startsWith('data:'));
+      if (!dataLine) return;
+
+      const event = JSON.parse(dataLine.slice(5).trim());
+      if (event.type === 'output') {
+        pipelineOutput += event.text;
+        const answerMarker = '--- Answer ---';
+        const answerIndex = pipelineOutput.indexOf(answerMarker);
+        const thinking = answerIndex === -1
+          ? pipelineOutput
+          : pipelineOutput.slice(0, answerIndex);
+        const answer = answerIndex === -1
+          ? ''
+          : pipelineOutput.slice(answerIndex + answerMarker.length).trim();
+
+        renderLocalStreamPreview(assistantMsgId, thinking, answer);
+        scrollToBottom();
+      } else if (event.type === 'error') {
+        throw new Error(event.message || 'The RAG pipeline failed.');
+      } else if (event.type === 'done') {
+        completed = true;
+      }
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+      let frameEnd;
+      while ((frameEnd = buffer.indexOf('\n\n')) !== -1) {
+        handleEvent(buffer.slice(0, frameEnd));
+        buffer = buffer.slice(frameEnd + 2);
+      }
+
+      if (done) break;
+    }
+
+    if (buffer.trim()) handleEvent(buffer);
+    if (!completed) {
+      throw new Error('The streaming connection ended before the pipeline completed.');
+    }
+
+    const answerMarker = '--- Answer ---';
+    const answerIndex = pipelineOutput.indexOf(answerMarker);
+    const thinking = answerIndex === -1
+      ? pipelineOutput.trim()
+      : pipelineOutput.slice(0, answerIndex).trim();
+    const answer = answerIndex === -1
+      ? 'No answer delimiter found in pipeline output.'
+      : pipelineOutput.slice(answerIndex + answerMarker.length).trim();
+
+    updateAssistantMessage(assistantMsgId, {
+      text: buildLocalRagResponse(thinking, answer),
+      status: 'complete'
+    });
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw err;
+    }
+    if (appState.abortController) {
+      appState.abortController.abort();
+      appState.abortController = null;
+    }
+    const errorMsg = `### ⚠️ Local RAG Request Failed\n\nThe request to the local Python RAG adapter at \`http://localhost:8000\` could not be completed.\n\n**Details:** ${err.message || 'Unknown error'}\n\n> Confirm that the adapter is running in the project virtual environment and that PostgreSQL, Ollama, and the configured Gemini API are available.`;
+    updateAssistantMessage(assistantMsgId, {
+      text: errorMsg,
+      status: 'error'
+    });
+    showToast('Local RAG request failed', 'error');
+  }
+}
+
+function renderLocalStreamPreview(msgId, thinking, answer) {
+  const msgEl = document.getElementById(msgId);
+  const contentEl = msgEl && msgEl.querySelector('.message-content');
+  if (!contentEl) return;
+
+  if (!contentEl.querySelector('.live-pipeline-output')) {
+    contentEl.innerHTML = `
+      <details class="live-pipeline-output pipeline-output-panel group rounded-xl overflow-hidden mb-4" open>
+        <summary class="flex items-center justify-between px-3.5 py-2 cursor-pointer select-none text-xs font-semibold">
+          <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-500 dark:text-teal-300"></i> Pipeline Activity</span>
+          <span class="live-pipeline-status animate-pulse-subtle">Running...</span>
+        </summary>
+        <div class="pipeline-output-content p-3">
+          <pre class="live-thinking pipeline-output-text whitespace-pre-wrap break-words p-3 rounded-lg overflow-x-auto"></pre>
+        </div>
+      </details>
+      <div class="live-answer whitespace-pre-wrap"></div>
+    `;
+    lucide.createIcons();
   }
 
-  let finalUrl = apiUrl;
-  if (method === 'GET') {
-    const urlObj = new URL(apiUrl, window.location.origin);
-    urlObj.searchParams.append('query', queryText);
-    finalUrl = urlObj.toString();
+  contentEl.querySelector('.live-thinking').innerHTML = formatPipelineOutput(thinking);
+  contentEl.querySelector('.live-answer').innerHTML = formatMarkdown(answer);
+}
+
+function buildLocalRagResponse(thinking, answer) {
+  let fullResponse = '';
+  if (thinking) {
+    fullResponse += `<details class="thinking-accordion pipeline-output-panel group rounded-xl overflow-hidden mb-4">`;
+    fullResponse += `<summary class="flex items-center justify-between px-3.5 py-2 cursor-pointer select-none text-xs font-semibold">`;
+    fullResponse += `<span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-500 dark:text-teal-300"></i> Pipeline Activity</span>`;
+    fullResponse += `<i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i>`;
+    fullResponse += `</summary>`;
+    fullResponse += `<div class="pipeline-output-content p-3">`;
+    fullResponse += `<pre class="pipeline-output-text whitespace-pre-wrap break-words p-3 rounded-lg overflow-x-auto">${formatPipelineOutput(thinking)}</pre>`;
+    fullResponse += `</div></details>`;
   }
-
-  const response = await fetch(finalUrl, {
-    method: method,
-    headers: headers,
-    body: method === 'POST' ? requestBody : undefined,
-    signal: appState.abortController.signal
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  let responseText = '';
-  let citations = [];
-
-  if (contentType.includes('application/json')) {
-    const data = await response.json();
-    // Auto-detect response field
-    responseText = data.answer || data.response || data.output || data.text || data.result || data.message || JSON.stringify(data, null, 2);
-    citations = data.citations || data.sources || data.retrieved_records || data.database_records || [];
-  } else {
-    responseText = await response.text();
-  }
-
-  updateAssistantMessage(assistantMsgId, {
-    text: responseText,
-    citations: citations,
-    status: 'complete'
-  });
+  return fullResponse ? `${fullResponse}\n\n${answer}` : answer;
 }
 
 // ==================== REALISTIC MOCK RAG SYSTEM ====================
@@ -578,10 +588,6 @@ function appendMessageToDOM(msg) {
         </div>`
       : formatMarkdown(msg.text);
 
-    const citationsHtml = (msg.citations && msg.citations.length > 0)
-      ? renderCitationsAccordion(msg.id, msg.citations)
-      : '';
-
     msgEl.innerHTML = `
       <div class="flex items-start gap-3 max-w-4xl mr-auto">
         <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-brand-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-brand-500/20">
@@ -591,9 +597,6 @@ function appendMessageToDOM(msg) {
           <div class="p-5 rounded-2xl rounded-tl-none bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm text-slate-800 dark:text-slate-100 text-sm">
             <div class="message-content markdown-body">
               ${contentHtml}
-            </div>
-            <div class="citations-container mt-4">
-              ${citationsHtml}
             </div>
           </div>
           <div class="flex items-center justify-between mt-1.5 px-1">
@@ -620,52 +623,12 @@ function updateAssistantMessage(msgId, updates) {
   const msgEl = document.getElementById(msgId);
   if (msgEl) {
     const contentEl = msgEl.querySelector('.message-content');
-    const citationsEl = msgEl.querySelector('.citations-container');
     
     if (contentEl && updates.text !== undefined) {
       contentEl.innerHTML = formatMarkdown(updates.text);
     }
-    
-    if (citationsEl && updates.citations) {
-      citationsEl.innerHTML = renderCitationsAccordion(msgId, updates.citations);
-    }
-    
     lucide.createIcons();
   }
-}
-
-function renderCitationsAccordion(msgId, citations) {
-  if (!citations || citations.length === 0) return '';
-  const accordionId = `citation-acc-${msgId}`;
-
-  const citationItems = citations.map((c, i) => `
-    <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs font-mono">
-      <div class="flex items-center justify-between text-[11px] mb-1 font-sans">
-        <span class="font-bold text-brand-700 dark:text-brand-300 flex items-center gap-1">
-          <i data-lucide="table" class="w-3 h-3"></i> Table: [${escapeHtml(c.table || 'db_record')}] &bull; Record: ${escapeHtml(c.id || '#' + (i+1))}
-        </span>
-        ${c.score ? `<span class="bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 px-1.5 py-0.2 rounded text-[10px]">Match: ${Math.round(parseFloat(c.score)*100)}%</span>` : ''}
-      </div>
-      <div class="text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-all text-[11px]">
-        ${escapeHtml(typeof c === 'string' ? c : (c.content || c.text || JSON.stringify(c)))}
-      </div>
-    </div>
-  `).join('');
-
-  return `
-    <details class="group border border-slate-200/70 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-800/30">
-      <summary class="flex items-center justify-between px-3.5 py-2 cursor-pointer select-none text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition">
-        <span class="flex items-center gap-1.5">
-          <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-brand-500"></i>
-          Retrieved Database Sources (${citations.length})
-        </span>
-        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i>
-      </summary>
-      <div class="p-3 border-t border-slate-200/70 dark:border-slate-800 space-y-2">
-        ${citationItems}
-      </div>
-    </details>
-  `;
 }
 
 function formatMarkdown(text) {
@@ -676,12 +639,76 @@ function formatMarkdown(text) {
       gfm: true,
       breaks: true,
     });
-    const rawHtml = marked.parse(text);
-    return DOMPurify.sanitize(rawHtml);
+    const rawHtml = DOMPurify.sanitize(marked.parse(text));
+    const parsedHtml = new DOMParser().parseFromString(rawHtml, 'text/html');
+
+    parsedHtml.querySelectorAll('a[href], img[src], code').forEach((element) => {
+      const isCode = element.tagName === 'CODE';
+      const codeLink = isCode
+        ? element.textContent.trim().match(/^!?\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))\s*\)$/)
+        : null;
+      const source = isCode
+        ? codeLink?.[2] || codeLink?.[3] || element.textContent.trim()
+        : element.getAttribute(element.tagName === 'A' ? 'href' : 'src');
+      const imageUrl = getArchiveImageUrl(source);
+      if (!imageUrl) return;
+
+      const image = document.createElement('img');
+      image.src = imageUrl;
+      image.alt = codeLink?.[1] ||
+        (element.tagName === 'A' ? element.textContent.trim() : element.getAttribute('alt')) ||
+        'Hospital X-ray';
+      image.loading = 'lazy';
+      element.replaceWith(image);
+    });
+
+    return parsedHtml.body.innerHTML;
   } catch (e) {
     console.error('Markdown parsing failed:', e);
     return `<p>${escapeHtml(text)}</p>`;
   }
+}
+
+function getArchiveImageUrl(source) {
+  let path;
+  try {
+    path = decodeURIComponent(new URL(source, document.baseURI).pathname).replace(/\\/g, '/');
+  } catch {
+    path = source.replace(/\\/g, '/');
+  }
+
+  const lowerPath = path.toLowerCase();
+  const archiveIndex = lowerPath.lastIndexOf('/archive/');
+  const datasetIndex = lowerPath.lastIndexOf('chest_xray_60/');
+  const relativePath = archiveIndex !== -1
+    ? path.slice(archiveIndex + '/archive/'.length)
+    : datasetIndex !== -1
+      ? path.slice(datasetIndex)
+      : '';
+
+  if (!relativePath.toLowerCase().startsWith('chest_xray_60/')) return null;
+
+  const pathSegments = relativePath.split('/');
+  if (pathSegments.some(segment => !segment || segment === '.' || segment === '..')) return null;
+  if (!/\.(?:jpe?g|png|gif|webp|bmp|svg)$/i.test(pathSegments[pathSegments.length - 1])) return null;
+
+  const encodedPath = pathSegments.map(segment => encodeURIComponent(segment)).join('/');
+  return new URL(`archive/${encodedPath}`, document.baseURI).href;
+}
+
+function formatPipelineOutput(output) {
+  return output.split('\n').map((line) => {
+    const sqlLine = line.match(/^\s*sql query written by gemini\s*->\s*(.*)$/i);
+    if (sqlLine) {
+      return `<span class="pipeline-line pipeline-line-sql"><span class="pipeline-line-badge">Gemini · SQL</span><span class="pipeline-sql-text">${escapeHtml(sqlLine[1])}</span></span>`;
+    }
+
+    if (/trying gemini|gemini.*(?:fallback|quota)|(?:fallback|quota).*gemini/i.test(line)) {
+      return `<span class="pipeline-line pipeline-line-gemini"><span class="pipeline-line-badge">Gemini</span>${escapeHtml(line)}</span>`;
+    }
+
+    return `<span class="pipeline-line">${escapeHtml(line) || '&nbsp;'}</span>`;
+  }).join('\n');
 }
 
 function escapeHtml(str) {
@@ -707,117 +734,6 @@ function handleClearChat() {
     localStorage.removeItem(STORAGE_KEYS.HISTORY);
     renderAllMessages();
     showToast('Chat history cleared', 'info');
-  }
-}
-
-// ==================== SETTINGS MODAL LOGIC ====================
-
-function openSettingsModal() {
-  const { mode, apiUrl, method, payloadFormat, authHeader } = appState.settings;
-  selectModeInModal(mode);
-  apiUrlInput.value = apiUrl || '';
-  apiMethodSelect.value = method || 'POST';
-  payloadFormatSelect.value = payloadFormat || 'query';
-  apiAuthInput.value = authHeader || '';
-
-  settingsModal.classList.remove('hidden');
-  settingsModal.classList.add('flex');
-  lucide.createIcons();
-}
-
-function closeSettingsModal() {
-  settingsModal.classList.add('hidden');
-  settingsModal.classList.remove('flex');
-}
-
-function selectModeInModal(mode) {
-  if (mode === 'mock') {
-    modeMockBtn.className = 'px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition bg-brand-50 dark:bg-brand-950/60 border-brand-500 text-brand-700 dark:text-brand-300';
-    modeLiveBtn.className = 'px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800';
-  } else {
-    modeLiveBtn.className = 'px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition bg-brand-50 dark:bg-brand-950/60 border-brand-500 text-brand-700 dark:text-brand-300';
-    modeMockBtn.className = 'px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800';
-  }
-  modeMockBtn.setAttribute('data-selected', mode === 'mock' ? 'true' : 'false');
-  modeLiveBtn.setAttribute('data-selected', mode === 'live' ? 'true' : 'false');
-}
-
-function saveSettingsFromModal() {
-  const isMock = modeMockBtn.getAttribute('data-selected') === 'true';
-  appState.settings.mode = isMock ? 'mock' : 'live';
-  appState.settings.apiUrl = apiUrlInput.value.trim() || DEFAULT_CONFIG.apiUrl;
-  appState.settings.method = apiMethodSelect.value;
-  appState.settings.payloadFormat = payloadFormatSelect.value;
-  appState.settings.authHeader = apiAuthInput.value.trim();
-
-  saveSettingsToStorage();
-  updateUIForCurrentMode();
-  closeSettingsModal();
-  showToast('Settings saved successfully', 'success');
-}
-
-function updateUIForCurrentMode() {
-  if (appState.settings.mode === 'mock') {
-    statusBadge.className = 'flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 transition-all';
-    statusText.textContent = 'Mock Demo Active';
-    customApiIndicator.classList.add('hidden');
-  } else {
-    statusBadge.className = 'flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 transition-all';
-    statusText.textContent = 'Live Backend API';
-    customApiIndicator.classList.remove('hidden');
-  }
-}
-
-async function testApiConnection() {
-  const url = apiUrlInput.value.trim();
-  if (!url) {
-    showToast('Please provide a valid backend URL', 'error');
-    return;
-  }
-
-  testConnectionBtn.disabled = true;
-  testConnectionBtn.innerHTML = `<span class="w-3 h-3 rounded-full border-2 border-slate-500 border-t-transparent animate-spin mr-1"></span> Testing...`;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-    const headers = {};
-    if (apiAuthInput.value.trim()) {
-      headers['Authorization'] = apiAuthInput.value.trim();
-    }
-
-    const testRes = await fetch(url, {
-      method: 'OPTIONS',
-      headers: headers,
-      signal: controller.signal
-    }).catch(async () => {
-      // Fallback probe with GET or POST with sample test
-      return await fetch(url, {
-        method: apiMethodSelect.value,
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: apiMethodSelect.value === 'POST' ? JSON.stringify({ query: 'ping' }) : undefined,
-        signal: controller.signal
-      });
-    });
-
-    clearTimeout(timeoutId);
-
-    if (testRes.ok || testRes.status === 405 || testRes.status === 422 || testRes.status === 400) {
-      showToast(`Server reachable! Status: ${testRes.status}`, 'success');
-    } else {
-      showToast(`Server responded with HTTP ${testRes.status}`, 'info');
-    }
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      showToast('Connection timed out (>4s)', 'error');
-    } else {
-      showToast(`Unable to connect: ${err.message}`, 'error');
-    }
-  } finally {
-    testConnectionBtn.disabled = false;
-    testConnectionBtn.innerHTML = `<i data-lucide="wifi" class="w-4 h-4"></i> Test Connection`;
-    lucide.createIcons();
   }
 }
 

@@ -21,6 +21,111 @@ code, pre, .font-mono {
   font-family: var(--font-mono);
 }
 
+.pipeline-output-text {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.pipeline-output-panel {
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.95), rgba(240, 253, 250, 0.9));
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.06);
+  color: #3730a3;
+}
+
+.pipeline-output-panel summary {
+  background: rgba(224, 231, 255, 0.55);
+}
+
+.pipeline-output-content {
+  border-top: 1px solid rgba(99, 102, 241, 0.14);
+}
+
+.pipeline-output-text {
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+  color: #475569;
+}
+
+.dark .pipeline-output-panel {
+  border-color: rgba(129, 140, 248, 0.24);
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.62), rgba(15, 50, 55, 0.58));
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.18);
+  color: #c7d2fe;
+}
+
+.dark .pipeline-output-panel summary {
+  background: rgba(49, 46, 129, 0.22);
+}
+
+.dark .pipeline-output-content {
+  border-top-color: rgba(129, 140, 248, 0.18);
+}
+
+.dark .pipeline-output-text {
+  border-color: rgba(129, 140, 248, 0.16);
+  background: rgba(2, 6, 23, 0.26);
+  color: #cbd5e1;
+}
+
+.pipeline-line {
+  display: block;
+  min-height: 1.7em;
+}
+
+.pipeline-line-gemini {
+  color: #4f46e5;
+}
+
+.pipeline-line-sql {
+  margin: 0.2rem 0;
+  padding: 0.35rem 0.55rem;
+  border-left: 2px solid #6366f1;
+  border-radius: 0.25rem;
+  background: rgba(224, 231, 255, 0.58);
+  color: #3730a3;
+}
+
+.pipeline-line-badge {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: rgba(99, 102, 241, 0.13);
+  color: #4338ca;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  vertical-align: 0.08em;
+}
+
+.pipeline-sql-text {
+  color: #312e81;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.dark .pipeline-line-gemini {
+  color: #c4b5fd;
+}
+
+.dark .pipeline-line-sql {
+  border-left-color: #a5b4fc;
+  background: rgba(67, 56, 202, 0.2);
+  color: #e0e7ff;
+}
+
+.dark .pipeline-line-badge {
+  background: rgba(129, 140, 248, 0.2);
+  color: #c7d2fe;
+}
+
+.dark .pipeline-sql-text {
+  color: #e0e7ff;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -71,6 +176,19 @@ code, pre, .font-mono {
 
 .markdown-body p:last-child {
   margin-bottom: 0;
+}
+
+.markdown-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem 0;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-radius: 0.75rem;
+}
+
+.dark .markdown-body img {
+  border-color: rgba(51, 65, 85, 0.8);
 }
 
 .markdown-body ul, .markdown-body ol {

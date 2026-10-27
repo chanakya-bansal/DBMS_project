@@ -75,8 +75,8 @@
       <!-- Center / Status Indicator -->
       <div class="flex items-center gap-2">
         <div id="statusBadge" class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 transition-all">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="statusText">Mock Demo Active</span>
+          <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+          <span id="statusText">Local RAG</span>
         </div>
       </div>
 
@@ -85,12 +85,6 @@
         <!-- DB Schema / Info Button -->
         <button id="infoBtn" title="Hospital DBMS Schema & Query Help" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
           <i data-lucide="database" class="w-5 h-5"></i>
-        </button>
-
-        <!-- API Settings Modal Button -->
-        <button id="settingsBtn" title="Backend API Configuration" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative">
-          <i data-lucide="settings" class="w-5 h-5"></i>
-          <span id="customApiIndicator" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-500"></span>
         </button>
 
         <!-- Clear Chat History -->
@@ -122,7 +116,7 @@
           <div>
             <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Hospital RAG & DBMS Assistant</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Ask questions in plain text to query patient records, doctor schedules, bed allocations, clinical protocols, and pharmacy inventory.
+              Ask about the hospital records in the connected database, including patients, doctors, appointments, treatments, billing, and X-rays.
             </p>
           </div>
         </div>
@@ -133,25 +127,25 @@
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
               <i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Patients
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Demographics & Diagnoses</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Demographics & registration</p>
           </div>
           <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
-              <i data-lucide="bed-double" class="w-4 h-4 text-amber-500"></i> Bed & Wards
+              <i data-lucide="stethoscope" class="w-4 h-4 text-emerald-500"></i> Doctors
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ICU & General Ward Occupancy</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Specialties & experience</p>
           </div>
           <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
-              <i data-lucide="stethoscope" class="w-4 h-4 text-emerald-500"></i> Doctors & OPD
+              <i data-lucide="calendar-days" class="w-4 h-4 text-amber-500"></i> Appointments
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Schedules & Specialties</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Dates, reasons & status</p>
           </div>
           <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
-              <i data-lucide="pill" class="w-4 h-4 text-purple-500"></i> Pharmacy
+              <i data-lucide="scan-line" class="w-4 h-4 text-purple-500"></i> Treatments & X-rays
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Stock & Interaction Protocols</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Clinical text & image records</p>
           </div>
         </div>
 
@@ -163,46 +157,46 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="presetChipsContainer">
             <!-- Dynamic Prompt Chips -->
             <button class="preset-chip text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-slate-800 transition group flex items-start gap-3"
-              data-prompt="How many ICU beds are currently available in the hospital?">
+              data-prompt="How many patients are recorded in the hospital database?">
               <div class="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition">
-                <i data-lucide="bed" class="w-4 h-4"></i>
+                <i data-lucide="users" class="w-4 h-4"></i>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Check available ICU & Ward beds</p>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Retrieves real-time bed count and department statuses</p>
+                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Count registered patients</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Counts patient records in the database</p>
               </div>
             </button>
 
             <button class="preset-chip text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-slate-800 transition group flex items-start gap-3"
-              data-prompt="What is the duty schedule for Dr. Sharma in Cardiology today?">
+              data-prompt="Which doctors specialize in cardiology?">
               <div class="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition">
-                <i data-lucide="user-check" class="w-4 h-4"></i>
+                <i data-lucide="stethoscope" class="w-4 h-4"></i>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Find Doctor Duty Schedule</p>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Cardiology OPD timings & on-call doctors</p>
+                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Find doctors by specialty</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Search recorded doctor specialties</p>
               </div>
             </button>
 
             <button class="preset-chip text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-slate-800 transition group flex items-start gap-3"
-              data-prompt="Summarize the medical history, active prescriptions, and recent lab tests for Patient ID #P-10482.">
+              data-prompt="How many appointments are marked cancelled?">
               <div class="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <i data-lucide="calendar-days" class="w-4 h-4"></i>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Summarize Patient Record (#P-10482)</p>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Diagnosis, blood work, prescriptions, and physician notes</p>
+                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Count cancelled appointments</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Aggregates appointment status records</p>
               </div>
             </button>
 
             <button class="preset-chip text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-slate-800 transition group flex items-start gap-3"
-              data-prompt="Check stock availability for Paracetamol 500mg and Ceftriaxone in the central pharmacy inventory.">
+              data-prompt="How many X-rays are labelled NORMAL or PNEUMONIA?">
               <div class="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 group-hover:scale-105 transition">
-                <i data-lucide="package-search" class="w-4 h-4"></i>
+                <i data-lucide="scan-line" class="w-4 h-4"></i>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Pharmacy Stock & Availability</p>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Current batch inventory, expiry, and reorder levels</p>
+                <p class="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">Count X-rays by label</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Summarizes recorded X-ray labels</p>
               </div>
             </button>
           </div>
@@ -267,7 +261,7 @@
       <!-- Quick note below input -->
       <div class="text-center mt-2">
         <p class="text-[11px] text-slate-400 dark:text-slate-500">
-          Sends text queries to the connected backend RAG service & retrieves ground-truth records from Hospital DBMS.
+          Questions are sent to the local RAG pipeline; its progress and answer appear in the chat.
         </p>
       </div>
 
@@ -277,7 +271,7 @@
   <!-- ==================== MODALS ==================== -->
 
   <!-- API Settings Modal -->
-  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <template id="retiredSettingsMarkup">
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-fade-in">
       
       <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -297,21 +291,24 @@
 
       <div class="py-4 space-y-4 text-sm">
         
-        <!-- Mode Switch (Live Backend vs Mock Demo) -->
+        <!-- Mode Switch (Live Backend vs Mock Demo vs Local Python RAG) -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
             Operational Mode
           </label>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-3 gap-2">
             <button id="modeMockBtn" type="button" class="px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition bg-brand-50 dark:bg-brand-950/60 border-brand-500 text-brand-700 dark:text-brand-300">
               <i data-lucide="bot" class="w-4 h-4"></i> Interactive Mock Mode
             </button>
             <button id="modeLiveBtn" type="button" class="px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               <i data-lucide="radio" class="w-4 h-4"></i> Live Backend Server
             </button>
+            <button id="modeLocalBtn" type="button" class="px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+              <i data-lucide="cpu" class="w-4 h-4"></i> Local Python RAG
+            </button>
           </div>
           <p class="text-[11px] text-slate-400 mt-1.5">
-            Mock mode simulates RAG responses and SQL database table citations without needing a live backend.
+            Mock mode simulates RAG responses. Local Python RAG runs the actual rag.py pipeline via a local API server (requires <code>python api_server.py</code> running).
           </p>
         </div>
 
@@ -391,7 +388,7 @@
       </div>
 
     </div>
-  </div>
+  </template>
 
   <!-- Database Schema & Help Modal -->
   <div id="infoModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
@@ -403,8 +400,8 @@
             <i data-lucide="database" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Hospital DBMS Schema & Capabilities</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Entities and fields indexed by the RAG backend</p>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Hospital Database & RAG</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Current data tables and request flow</p>
           </div>
         </div>
         <button id="closeInfoModalBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -419,10 +416,9 @@
             <i data-lucide="workflow" class="w-4 h-4 text-brand-500"></i> How the RAG Pipeline Works
           </h4>
           <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-            1. User submits a natural language text query from this clean frontend.<br/>
-            2. The query is transmitted to your backend RAG server via JSON/Text HTTP POST.<br/>
-            3. The backend retrieves matching records from the Hospital DBMS (Patients, Wards, Appointments, Prescriptions, Lab Reports) using vector search and SQL joins.<br/>
-            4. The LLM generates a grounded clinical or administrative response with table citations and returns it to be rendered here.
+            1. Your question is sent to the local Python RAG adapter.<br/>
+            2. The pipeline retrieves related embeddings and can query PostgreSQL for exact values.<br/>
+            3. Progress appears here as the pipeline runs; the final answer is shown when generation completes.
           </p>
         </div>
 
@@ -437,7 +433,7 @@
               <span class="w-2 h-2 rounded-full bg-blue-500"></span> PATIENTS
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <code>patient_id</code>, <code>name</code>, <code>age</code>, <code>gender</code>, <code>blood_group</code>, <code>admission_date</code>, <code>diagnosis</code>, <code>attending_physician</code>
+              <code>patient_id</code>, <code>first_name</code>, <code>last_name</code>, <code>gender</code>, <code>date_of_birth</code>, <code>registration_date</code>, <code>insurance_provider</code>
             </p>
           </div>
 
@@ -446,34 +442,34 @@
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span> DOCTORS & STAFF
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <code>doctor_id</code>, <code>name</code>, <code>department</code>, <code>specialization</code>, <code>shift_timings</code>, <code>opd_room</code>, <code>contact</code>
+              <code>doctor_id</code>, <code>first_name</code>, <code>last_name</code>, <code>specialization</code>, <code>years_experience</code>, <code>hospital_branch</code>
             </p>
           </div>
 
           <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40">
             <p class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span> BEDS & WARDS
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span> APPOINTMENTS
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <code>bed_number</code>, <code>ward_name</code>, <code>type (ICU/General/CCU)</code>, <code>status (Occupied/Available)</code>, <code>daily_rate</code>
+              <code>appointment_id</code>, <code>patient_id</code>, <code>doctor_id</code>, <code>appointment_date</code>, <code>appointment_time</code>, <code>reason_for_visit</code>, <code>status</code>
             </p>
           </div>
 
           <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40">
             <p class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-              <span class="w-2 h-2 rounded-full bg-purple-500"></span> PHARMACY & INVENTORY
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span> TREATMENTS & BILLING
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <code>medicine_id</code>, <code>name</code>, <code>category</code>, <code>stock_quantity</code>, <code>unit_price</code>, <code>reorder_level</code>, <code>expiry_date</code>
+              <code>treatments</code>: <code>treatment_type</code>, <code>description</code>, <code>cost</code>; <code>billing</code>: <code>amount</code>, <code>payment_method</code>, <code>payment_status</code>
             </p>
           </div>
 
           <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/40 sm:col-span-2">
             <p class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-              <span class="w-2 h-2 rounded-full bg-rose-500"></span> LAB REPORTS & PRESCRIPTIONS
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> X-RAY RECORDS
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <code>report_id</code>, <code>patient_id</code>, <code>test_name</code>, <code>test_result</code>, <code>reference_range</code>, <code>prescribed_drugs</code>, <code>dosage</code>, <code>doctor_notes</code>
+              <code>xray_id</code>, <code>appointment_id</code>, <code>treatment_id</code>, <code>image_path</code>, <code>image_label</code>
             </p>
           </div>
 

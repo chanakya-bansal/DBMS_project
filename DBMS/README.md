@@ -94,5 +94,3 @@ python scripts/rag.py "Which patients had similar symptoms to chest pain and fat
 ---
 
 ## ⚠️ Important — column names are placeholders
-
-I don't have your actual CSVs yet, so `sql/schema.sql` and `scripts/ingest.py` use **guessed column names** based on typical Kaggle hospital datasets. Once you paste me the header row of each CSV (or run `head -1 data/patients.csv` etc.), I'll update the schema and ingestion script to match exactly — mismatched column names will break ingestion otherwise.
